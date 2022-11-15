@@ -20,6 +20,31 @@ const client = new MongoClient(uri, {
   serverApi: ServerApiVersion.v1,
 });
 
+// mongo DB run function start
+const run = async () => {
+  try {
+    // collctions start
+    const appointmentOptionsCollection = client
+      .db("doctorsPortal")
+      .collection("appointmentOptions");
+    // collctions end
+
+    // get all appointment options API start
+    app.get("/appointmentOptions", async (req, res) => {
+      const query = {};
+      const cursor = appointmentOptionsCollection.find(query);
+      const appointmentOptions = await cursor.toArray();
+      res.send(appointmentOptions);
+    });
+    // get all appointment options API end
+  } finally {
+  }
+};
+
+run().catch((error) => console.log(error));
+
+// mongo DB run function end
+
 console.log(uri);
 // mongo DB setup end
 
