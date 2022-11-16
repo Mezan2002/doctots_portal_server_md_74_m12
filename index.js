@@ -24,19 +24,52 @@ const client = new MongoClient(uri, {
 const run = async () => {
   try {
     // collctions start
+
+    // appointment collection start
     const appointmentOptionsCollection = client
       .db("doctorsPortal")
       .collection("appointmentOptions");
+    // appointment collection end
+
+    // bookings collection start
+    const bookingsCollection = client
+      .db("doctorsPortal")
+      .collection("bookings");
+    // bookings collection end
+
     // collctions end
 
     // get all appointment options API start
     app.get("/appointmentOptions", async (req, res) => {
+      const date = req.query.date;
       const query = {};
       const cursor = appointmentOptionsCollection.find(query);
       const appointmentOptions = await cursor.toArray();
+      const bookingQuery = { appointmentDate: date };
+      const alreadyBooked = await bookingsCollection
+        .find(bookingQuery)
+        .toArray();
+      appointmentOptions.forEach((option) => {
+        const optionBooked = alreadyBooked.filter(
+          (book) => book.appointmentTakingFor === option.name
+        );
+        const bookedSlots = optionBooked.map((book) => book.timeOfAppointment);
+        const remainingSlots = option.slots.filter(
+          (slot) => !bookedSlots.includes(slot)
+        );
+        option.slots = remainingSlots;
+      });
       res.send(appointmentOptions);
     });
     // get all appointment options API end
+
+    // post bookings API start
+    app.post("/bookings", async (req, res) => {
+      const bookings = req.body;
+      const result = await bookingsCollection.insertOne(bookings);
+      res.send(result);
+    });
+    // post bookings API end
   } finally {
   }
 };
@@ -45,7 +78,6 @@ run().catch((error) => console.log(error));
 
 // mongo DB run function end
 
-console.log(uri);
 // mongo DB setup end
 
 // basic setup start
